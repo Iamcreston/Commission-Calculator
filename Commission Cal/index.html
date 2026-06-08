@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Commission Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script>
+    $(function() {
+      $('#lob-calc, #premium, #agent-tier, #policy-count').on('input change', function() {
+        calculate();
+      });
+      calculate();
+    });
+
+    function calculate() {
+      var premium = parseFloat($('#premium').val()) || 0;
+      var tier    = $('#agent-tier').val();
+      var count   = parseInt($('#policy-count').val()) || 0;
+      var lob     = $('#lob-calc').val();
+
+      var baseRate = 0.10;
+      if (tier === 'senior') baseRate = 0.12;
+      if (tier === 'elite')  baseRate = 0.15;
+
+      var lobMulti = 1.0;
+      if (lob === 'commercial') lobMulti = 1.20;
+      if (lob === 'flood')      lobMulti = 1.10;
+
+      var bonusRate    = count >= 5 ? 0.02 : 0.00;
+      var overrideRate = tier === 'elite' ? 0.01 : 0.00;
+
+      var baseAmt     = premium * baseRate * lobMulti;
+      var bonusAmt    = premium * bonusRate;
+      var overrideAmt = premium * overrideRate;
+      var netAmt      = baseAmt + bonusAmt + overrideAmt;
+
+      $('#net-payout').text(netAmt.toFixed(2));
+
+      var rows = '';
+      rows += buildRow('Base Commission', pct(baseRate * lobMulti), dollar(baseAmt));
+      rows += buildRow('Volume Bonus (5+ policies)', pct(bonusRate), dollar(bonusAmt));
+      rows += buildRow('Elite Override', pct(overrideRate), dollar(overrideAmt));
+      rows += buildRow('NET PAYOUT', '', dollar(netAmt));
+
+      $('#breakdown-body').html(rows);
+    }
+
+    function buildRow(label, rate, amount) {
+      return '<tr><td>' + label + '</td><td>' + rate + '</td><td>$' + amount + '</td></tr>';
+    }
+
+    function pct(rate) {
+      return rate > 0 ? (rate * 100).toFixed(1) + '%' : '—';
+    }
+
+    function dollar(amt) {
+      return amt.toFixed(2);
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <h1>Agent Commission Calculator</h1>
+
+  <div class="grid">
+    <div>
+      <label>Line of Business</label>
+      <select id="lob-calc">
+        <option value="auto">Personal Auto</option>
+        <option value="home">Homeowners</option>
+        <option value="flood">Flood</option>
+        <option value="commercial">Commercial</option>
+      </select>
+    </div>
+    <div>
+      <label>Annual Premium ($)</label>
+      <input type="number" id="premium" placeholder="1200" value="1200" />
+    </div>
+    <div>
+      <label>Agent Tier</label>
+      <select id="agent-tier">
+        <option value="standard">Standard (10%)</option>
+        <option value="senior">Senior (12%)</option>
+        <option value="elite">Elite (15%)</option>
+      </select>
+    </div>
+    <div>
+      <label>Policies Written This Month</label>
+      <input type="number" id="policy-count" placeholder="5" value="5" />
+    </div>
+  </div>
+
+  <div class="big-number">Net Payout: $<span id="net-payout">0.00</span></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Rate</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody id="breakdown-body"></tbody>
+  </table>
+
+</body>
+</html>
